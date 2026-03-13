@@ -1,9 +1,0 @@
-{
-  "name": "little-planets",
-  "version": "1.0.0",
-  "description": "Little Planets - Suika-style planet merging game",
-  "scripts": {
-    "dev": "npx serve . -p 3000",
-    "start": "npx serve ."
-  }
-}
