@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Little Planets — Merge the Universe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #020510;
+      --panel: rgba(8, 18, 48, 0.85);
+      --border: rgba(100, 160, 255, 0.2);
+      --accent: #4af;
+      --accent2: #f4a;
+      --text: #cde;
+      --text-dim: rgba(180, 210, 255, 0.5);
+      --glow: 0 0 20px rgba(64, 170, 255, 0.4);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Exo 2', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Starfield */
+    #stars {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    header {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 12px 0 6px;
+    }
+
+    header h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.2rem, 3vw, 1.8rem);
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      background: linear-gradient(135deg, #4af 0%, #a4f 50%, #f4a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: none;
+    }
+
+    header p {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    #game-wrapper {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 8px;
+    }
+
+    /* Side panel */
+    .side-panel {
+      width: 140px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .panel-box {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      backdrop-filter: blur(10px);
+    }
+
+    .panel-box h3 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.55rem;
+      letter-spacing: 0.25em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    #score-val {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: var(--glow);
+    }
+
+    #best-val {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--text-dim);
+    }
+
+    /* Next planet preview */
+    #next-canvas {
+      width: 100%;
+      height: 80px;
+      display: block;
+    }
+
+    /* Planet legend */
+    #legend {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+    }
+
+    .legend-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Game canvas container */
+    #canvas-container {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 0 40px rgba(64, 140, 255, 0.15), inset 0 0 60px rgba(0,0,10,0.5);
+    }
+
+    #game-canvas {
+      display: block;
+      cursor: none;
+    }
+
+    /* Drop indicator line */
+    #drop-line {
+      position: absolute;
+      top: 0;
+      width: 1px;
+      background: rgba(150, 200, 255, 0.2);
+      pointer-events: none;
+      border: none;
+      border-left: 1px dashed rgba(150, 200, 255, 0.25);
+    }
+
+    /* Custom cursor planet */
+    #cursor-planet {
+      position: absolute;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      z-index: 5;
+    }
+
+    /* Danger zone */
+    #danger-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: rgba(255, 80, 80, 0.3);
+      pointer-events: none;
+    }
+
+    /* Buttons */
+    .btn {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--accent);
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: rgba(64, 170, 255, 0.15);
+      border-color: var(--accent);
+      box-shadow: var(--glow);
+    }
+
+    /* Overlays */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(2, 5, 16, 0.88);
+      backdrop-filter: blur(8px);
+      z-index: 20;
+      border-radius: 15px;
+    }
+
+    .overlay h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+
+    .overlay .score-big {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-shadow: var(--glow);
+      margin-bottom: 4px;
+    }
+
+    .overlay p {
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      margin-bottom: 20px;
+    }
+
+    .overlay .btn {
+      width: auto;
+      padding: 10px 28px;
+      font-size: 0.75rem;
+    }
+
+    #start-overlay .title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #4af, #a4f, #f4a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .instructions {
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      text-align: center;
+      line-height: 1.8;
+      margin-bottom: 20px;
+    }
+
+    .instructions b {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    #merge-flash {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: flash-out 0.5s ease-out forwards;
+      z-index: 15;
+    }
+
+    @keyframes flash-out {
+      0% { transform: translate(-50%,-50%) scale(0.5); opacity: 1; }
+      100% { transform: translate(-50%,-50%) scale(2.5); opacity: 0; }
+    }
+
+    .score-popup {
+      position: absolute;
+      pointer-events: none;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 0 10px var(--accent);
+      animation: pop-up 1s ease-out forwards;
+      z-index: 16;
+    }
+
+    @keyframes pop-up {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-50px); opacity: 0; }
+    }
+
+    @media (max-width: 600px) {
+      .side-panel { width: 110px; }
+      #score-val { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+
+<header>
+  <h1>✦ LITTLE PLANETS ✦</h1>
+  <p>Merge the Universe</p>
+</header>
+
+<div id="game-wrapper">
+  <!-- Left panel -->
+  <div class="side-panel">
+    <div class="panel-box">
+      <h3>Score</h3>
+      <div id="score-val">0</div>
+      <h3 style="margin-top:8px">Best</h3>
+      <div id="best-val">0</div>
+    </div>
+    <div class="panel-box">
+      <h3>Prochain</h3>
+      <canvas id="next-canvas" width="120" height="80"></canvas>
+    </div>
+    <button class="btn" id="restart-btn">↺ Restart</button>
+  </div>
+
+  <!-- Main canvas -->
+  <div id="canvas-container">
+    <canvas id="game-canvas"></canvas>
+    <div id="drop-line"></div>
+    <canvas id="cursor-planet"></canvas>
+    <div id="danger-line"></div>
+
+    <!-- Start overlay -->
+    <div class="overlay" id="start-overlay">
+      <div class="title">LITTLE PLANETS</div>
+      <div class="instructions">
+        <b>Cliquez</b> pour lâcher une planète<br />
+        Deux planètes <b>identiques</b> fusionnent<br />
+        en une plus grande !<br />
+        Ne laissez pas dépasser la <b>ligne rouge</b>
+      </div>
+      <button class="btn" id="start-btn">▶ Jouer</button>
+    </div>
+
+    <!-- Game over overlay -->
+    <div class="overlay" id="gameover-overlay" style="display:none">
+      <h2 style="color:#f66">✕ GAME OVER</h2>
+      <div class="score-big" id="final-score">0</div>
+      <p id="final-best-text">Score enregistré !</p>
+      <button class="btn" id="retry-btn">↺ Rejouer</button>
+    </div>
+  </div>
+
+  <!-- Right panel (legend) -->
+  <div class="side-panel">
+    <div class="panel-box">
+      <h3>Planètes</h3>
+      <div id="legend"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
